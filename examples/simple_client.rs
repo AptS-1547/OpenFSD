@@ -7,6 +7,13 @@
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 
+// Example FSD protocol values
+const EXAMPLE_CALLSIGN: &str = "TEST123";
+const EXAMPLE_CLIENT_ID: &str = "69d7"; // EuroScope client ID
+const EXAMPLE_CID: &str = "1234567"; // Example VATSIM CID
+const EXAMPLE_PASSWORD: &str = "password"; // Placeholder - not a real password
+const EXAMPLE_UID: &str = "987654321"; // Example unique identifier
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("FSD Simple Client Example");
@@ -44,8 +51,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // Send client identification
-    let callsign = "TEST123";
-    let id_packet = format!("$ID{}:SERVER:69d7:Example Client:3:2:1234567:987654321\r\n", callsign);
+    let id_packet = format!(
+        "$ID{}:SERVER:{}:Example Client:3:2:{}:{}\r\n", 
+        EXAMPLE_CALLSIGN, EXAMPLE_CLIENT_ID, EXAMPLE_CID, EXAMPLE_UID
+    );
     println!("> {}", id_packet.trim_end());
     writer.write_all(id_packet.as_bytes()).await?;
     writer.flush().await?;
@@ -54,7 +63,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
     // Send pilot login
-    let login_packet = format!("#AP{}:SERVER:1234567:password:1:1:2:John Doe KJFK\r\n", callsign);
+    let login_packet = format!(
+        "#AP{}:SERVER:{}:{}:1:1:2:John Doe KJFK\r\n", 
+        EXAMPLE_CALLSIGN, EXAMPLE_CID, EXAMPLE_PASSWORD
+    );
     println!("> {}", login_packet.trim_end());
     writer.write_all(login_packet.as_bytes()).await?;
     writer.flush().await?;
@@ -63,7 +75,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
     // Send a position update
-    let pos_packet = format!("@N{}:1200:1:40.6413:-73.7781:5000:250:414141414:30\r\n", callsign);
+    let pos_packet = format!("@N{}:1200:1:40.6413:-73.7781:5000:250:414141414:30\r\n", EXAMPLE_CALLSIGN);
     println!("> {}", pos_packet.trim_end());
     writer.write_all(pos_packet.as_bytes()).await?;
     writer.flush().await?;
@@ -72,7 +84,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
     // Send a text message
-    let msg_packet = format!("#TM{}:*:Hello from the example client!\r\n", callsign);
+    let msg_packet = format!("#TM{}:*:Hello from the example client!\r\n", EXAMPLE_CALLSIGN);
     println!("> {}", msg_packet.trim_end());
     writer.write_all(msg_packet.as_bytes()).await?;
     writer.flush().await?;
@@ -81,7 +93,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
     // Send logoff
-    let logoff_packet = format!("#DP{}:1234567\r\n", callsign);
+    let logoff_packet = format!("#DP{}:{}\r\n", EXAMPLE_CALLSIGN, EXAMPLE_CID);
     println!("> {}", logoff_packet.trim_end());
     writer.write_all(logoff_packet.as_bytes()).await?;
     writer.flush().await?;
