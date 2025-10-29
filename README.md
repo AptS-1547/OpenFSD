@@ -8,14 +8,17 @@ OpenFSD is a Rust implementation of the FSD protocol used by flight simulation n
 
 ## Features
 
-- ✅ Complete FSD packet parser and formatter
-- ✅ TCP server infrastructure
-- ✅ Client connection management
-- ✅ Support for authentication packets
+- ✅ Complete FSD packet parser and formatter with support for all major packet types
+- ✅ High-performance async TCP server using Tokio
+- ✅ Client connection management with callsign mapping
+- ✅ Support for authentication packets (client ID, pilot/ATC login)
 - ✅ Position updates (pilots and ATC)
-- ✅ Text messaging
+- ✅ Text messaging with broadcast support
 - ✅ Information requests/responses
-- ✅ Flight plan handling
+- ✅ Flight plan handling and broadcasting
+- ✅ TOML-based configuration
+- ✅ Structured logging with configurable levels
+- ✅ Example client demonstrating protocol usage
 
 ## Building
 
@@ -48,16 +51,50 @@ The server will start listening on `0.0.0.0:6809` by default (standard FSD port)
 
 ### Configuration
 
-The server can be configured by modifying the `ServerConfig` in `src/main.rs`:
+The server can be configured using a `config.toml` file in the project root. If the file doesn't exist, the server will use default settings.
 
-```rust
-let config = ServerConfig {
-    address: "0.0.0.0".to_string(),
-    port: 6809,
-    server_name: "OpenFSD".to_string(),
-    server_version: "0.1.0".to_string(),
-    max_clients: 1000,
-};
+Example `config.toml`:
+
+```toml
+[server]
+address = "0.0.0.0"
+port = 6809
+name = "OpenFSD"
+version = "0.1.0"
+max_clients = 1000
+
+[logging]
+level = "info"
+```
+
+### Running the Example Client
+
+An example client is provided to demonstrate basic FSD communication:
+
+```bash
+cargo run --example simple_client
+```
+
+This will connect to a running server on `localhost:6809` and send sample packets including:
+- Client identification
+- Pilot login
+- Position update
+- Text message
+- Logoff
+
+## Architecture
+
+The server uses a broadcast-based architecture:
+
+1. **Client Connections**: Each client connection runs in its own Tokio task
+2. **Packet Processing**: Incoming packets are sent to a central processing queue
+3. **Broadcasting**: Processed packets are broadcast to relevant clients via channels
+4. **Non-blocking**: All I/O operations are asynchronous using Tokio
+
+### Packet Flow
+
+```
+Client → TCP Stream → Parser → Packet Queue → Processor → Broadcast Channel → Other Clients
 ```
 
 ## Protocol Documentation
@@ -81,10 +118,14 @@ Where:
 
 ```
 src/
-├── main.rs      # Main entry point
+├── main.rs      # Main entry point and configuration loading
 ├── packet.rs    # FSD packet parser and formatter
-├── client.rs    # Client connection handling
-└── server.rs    # FSD server implementation
+├── client.rs    # Client data structures
+├── server.rs    # FSD server implementation with broadcast logic
+└── config.rs    # Configuration file handling
+examples/
+└── simple_client.rs  # Example FSD client
+config.toml      # Server configuration (optional)
 ```
 
 ## Development

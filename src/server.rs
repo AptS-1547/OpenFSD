@@ -1,5 +1,5 @@
 use crate::client::{Client, ClientState, ClientType};
-use crate::packet::{Packet, PacketType};
+use crate::packet::Packet;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
