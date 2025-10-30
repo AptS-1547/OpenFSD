@@ -1,0 +1,19 @@
+[server]
+# Server bind address
+address = "0.0.0.0"
+
+# Server port (standard FSD port is 6809)
+port = 6809
+
+# Server name
+name = "OpenFSD"
+
+# Server version
+version = "0.1.0"
+
+# Maximum number of simultaneous clients
+max_clients = 1000
+
+[logging]
+# Log level: trace, debug, info, warn, error
+level = "info"

@@ -1,0 +1,17 @@
+[package]
+name = "openfsd"
+version = "0.1.0"
+edition = "2021"
+authors = ["OpenFSD Contributors"]
+description = "A complete FSD server protocol implementation in Rust"
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4"
+env_logger = "0.11"
+thiserror = "1"
+rand = "0.8"
+toml = "0.8"
