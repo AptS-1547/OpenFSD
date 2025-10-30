@@ -17,3 +17,10 @@ max_clients = 1000
 [logging]
 # Log level: trace, debug, info, warn, error
 level = "info"
+
+[database]
+# Database connection URL
+# SQLite: "sqlite://openfsd.db" or "sqlite::memory:"
+# PostgreSQL: "postgres://username:password@localhost/database"
+# MySQL: "mysql://username:password@localhost/database"
+url = "sqlite://openfsd.db"

@@ -6,6 +6,21 @@ authors = ["OpenFSD Contributors"]
 description = "A complete FSD server protocol implementation in Rust"
 license = "MIT"
 
+[workspace]
+members = [".", "migration"]
+
+[lib]
+name = "openfsd"
+path = "src/lib.rs"
+
+[[bin]]
+name = "openfsd"
+path = "src/main.rs"
+
+[[bin]]
+name = "openfsd-admin"
+path = "src/bin/openfsd-admin.rs"
+
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
@@ -15,3 +30,17 @@ env_logger = "0.11"
 thiserror = "1"
 rand = "0.8"
 toml = "0.8"
+
+# Database
+sea-orm = { version = "1", features = ["sqlx-sqlite", "sqlx-postgres", "sqlx-mysql", "runtime-tokio-rustls", "macros"] }
+sea-orm-migration = { version = "1", features = ["runtime-tokio-rustls", "sqlx-sqlite", "sqlx-postgres", "sqlx-mysql"] }
+chrono = "0.4"
+
+# Authentication
+argon2 = "0.5"
+
+# Validation
+regex = "1"
+
+# Migration (local)
+migration = { path = "migration" }

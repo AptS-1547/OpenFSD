@@ -49,6 +49,11 @@ impl Packet {
             return Err(PacketError::InvalidFormat("Empty packet".to_string()));
         }
 
+        // Validate packet length (max 4096 characters)
+        if raw.len() > 4096 {
+            return Err(PacketError::InvalidFormat("Packet too long".to_string()));
+        }
+
         // Determine packet type from prefix
         let first_char = raw.chars().next().unwrap();
         let packet_type = match first_char {
@@ -66,6 +71,11 @@ impl Packet {
                 )))
             }
         };
+
+        // Validate minimum packet structure
+        if raw.len() < 3 {
+            return Err(PacketError::InvalidFormat("Packet too short".to_string()));
+        }
 
         // Remove the prefix
         let without_prefix = &raw[1..];
@@ -155,6 +165,11 @@ impl Packet {
 
     /// Format the packet back to FSD protocol string
     pub fn format(&self) -> String {
+        // Validate packet components
+        if self.command.is_empty() {
+            return String::new();
+        }
+
         let prefix = match self.packet_type {
             PacketType::Request => '$',
             PacketType::Client => '#',
@@ -190,8 +205,52 @@ impl Packet {
             result.push_str(&self.data.join(":"));
         }
 
+        // Validate total packet length
+        if result.len() > 4096 {
+            log::warn!("Packet too long, truncating: {}", self.command);
+            result.truncate(4090);
+        }
+
         result.push_str("\r\n");
         result
+    }
+
+    /// Validate packet structure and content
+    pub fn validate(&self) -> Result<(), PacketError> {
+        // Check required fields
+        if self.command.is_empty() {
+            return Err(PacketError::MissingField("command".to_string()));
+        }
+
+        // Validate callsign format (basic validation)
+        let callsign_pattern = regex::Regex::new(r"^[A-Z0-9]{3,7}$").unwrap();
+        if !self.source.is_empty() && !callsign_pattern.is_match(&self.source) {
+            return Err(PacketError::InvalidFormat(format!(
+                "Invalid source callsign: {}",
+                self.source
+            )));
+        }
+
+        if self.destination != "*" && self.destination != "SERVER" && self.destination != "DATA" {
+            if !callsign_pattern.is_match(&self.destination) {
+                return Err(PacketError::InvalidFormat(format!(
+                    "Invalid destination callsign: {}",
+                    self.destination
+                )));
+            }
+        }
+
+        // Validate data fields
+        for (i, field) in self.data.iter().enumerate() {
+            if field.len() > 1024 {
+                return Err(PacketError::InvalidFormat(format!(
+                    "Data field {} too long: {} characters",
+                    i, field.len()
+                )));
+            }
+        }
+
+        Ok(())
     }
 }
 

@@ -1,5 +1,7 @@
+mod auth;
 mod client;
 mod config;
+mod db;
 mod packet;
 mod server;
 
@@ -24,9 +26,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     log::info!("Starting OpenFSD Server...");
 
+    // Initialize database
+    log::info!("Initializing database...");
+    let db = db::init(&config.database.url).await?;
+    log::info!("Database initialized successfully");
+
     // Create and run server
     let server_config = config.into();
-    let server = Server::new(server_config);
+    let server = Server::new(server_config, db);
 
     // Run the server
     server.run().await?;

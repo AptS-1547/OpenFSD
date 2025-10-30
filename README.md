@@ -1,5 +1,14 @@
 # OpenFSD
 
+> [!WARNING]
+> **⚠️ 正在开发中 - 请勿在生产环境使用**
+> 本项目目前处于早期开发阶段，功能不完整且未经充分测试。
+> 不保证 API 稳定性，不建议用于生产环境。
+>
+> **🚧 UNDER DEVELOPMENT - DO NOT USE IN PRODUCTION**
+> This project is in early development stage. Features are incomplete and not fully tested.
+> API stability is not guaranteed. Not recommended for production use.
+
 A complete implementation of the FSD (Flight Simulator Display) server protocol in Rust.
 
 ## Overview

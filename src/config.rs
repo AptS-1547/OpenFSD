@@ -6,6 +6,7 @@ use std::path::Path;
 pub struct Config {
     pub server: ServerConfig,
     pub logging: LoggingConfig,
+    pub database: DatabaseConfig,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -20,6 +21,11 @@ pub struct ServerConfig {
 #[derive(Debug, Deserialize, Clone)]
 pub struct LoggingConfig {
     pub level: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct DatabaseConfig {
+    pub url: String,
 }
 
 impl Config {
@@ -43,6 +49,9 @@ impl Default for Config {
             },
             logging: LoggingConfig {
                 level: "info".to_string(),
+            },
+            database: DatabaseConfig {
+                url: "sqlite://openfsd.db".to_string(),
             },
         }
     }
