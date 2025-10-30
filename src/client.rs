@@ -81,7 +81,7 @@ impl ClientConnection {
 
     /// Handle the client connection
     pub async fn handle(self) -> Result<(), Box<dyn std::error::Error>> {
-        let (reader, mut writer) = self.stream.into_split();
+        let (reader, writer) = self.stream.into_split();
         let mut reader = BufReader::new(reader);
         let mut line = String::new();
 
@@ -90,7 +90,7 @@ impl ClientConnection {
         loop {
             line.clear();
             let bytes_read = reader.read_line(&mut line).await?;
-            
+
             if bytes_read == 0 {
                 log::info!("Client {} disconnected", self.addr);
                 break;
@@ -99,7 +99,7 @@ impl ClientConnection {
             match Packet::parse(&line) {
                 Ok(packet) => {
                     log::debug!("Received packet from {}: {}", self.addr, packet);
-                    
+
                     // Send packet to server for processing
                     if self.tx.send(packet).await.is_err() {
                         log::error!("Failed to send packet to server");

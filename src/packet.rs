@@ -44,7 +44,7 @@ impl Packet {
     /// Parse a raw FSD packet string
     pub fn parse(raw: &str) -> Result<Self, PacketError> {
         let raw = raw.trim_end_matches("\r\n").trim();
-        
+
         if raw.is_empty() {
             return Err(PacketError::InvalidFormat("Empty packet".to_string()));
         }
@@ -59,31 +59,37 @@ impl Packet {
             '!' => PacketType::IvaoSpecific,
             '&' => PacketType::IvaoData,
             '-' => PacketType::IvaoOther,
-            _ => return Err(PacketError::InvalidFormat(format!("Unknown prefix: {}", first_char))),
+            _ => {
+                return Err(PacketError::InvalidFormat(format!(
+                    "Unknown prefix: {}",
+                    first_char
+                )))
+            }
         };
 
         // Remove the prefix
         let without_prefix = &raw[1..];
-        
+
         // Find the first colon to separate (command+identifier) from the rest
-        let first_colon = without_prefix.find(':')
+        let first_colon = without_prefix
+            .find(':')
             .ok_or_else(|| PacketError::InvalidFormat("No colon found".to_string()))?;
-        
+
         let command_ident = &without_prefix[..first_colon];
         let rest = &without_prefix[first_colon + 1..];
-        
+
         // Extract command and first identifier
         let (command, first_ident) = Self::split_command_source(command_ident);
-        
+
         // Split remaining parts by colons
         let parts: Vec<&str> = rest.splitn(2, ':').collect();
-        
+
         if parts.is_empty() {
             return Err(PacketError::InvalidFormat("Not enough fields".to_string()));
         }
 
         let second_ident = parts[0].to_string();
-        
+
         // Determine which is source and which is destination based on command
         // For server identification (DI), format is: command+destination:source
         // For most others (ID, TM, AA, AP, etc.), format is: command+source:destination
@@ -93,12 +99,12 @@ impl Packet {
             (second_ident, first_ident)
         } else if packet_type == PacketType::PilotUpdate || packet_type == PacketType::AtcUpdate {
             // Position updates: first identifier is the destination (subject of update)
-            (String::new(), first_ident)  // Source is implicit (the sender)
+            (String::new(), first_ident) // Source is implicit (the sender)
         } else {
             // Default case (ID, TM, AA, AP, etc.): source comes first
             (first_ident, second_ident)
         };
-        
+
         let data = if parts.len() > 1 {
             parts[1].split(':').map(|s| s.to_string()).collect()
         } else {
@@ -122,11 +128,15 @@ impl Packet {
         if s.len() >= 2 {
             let first_two = &s[..2];
             // Known 2-character commands
-            if matches!(first_two, "DI" | "ID" | "TM" | "AA" | "AP" | "DA" | "DP" | "CQ" | "CR" | "FP" | "NV") {
+            if matches!(
+                first_two,
+                "DI" | "ID" | "TM" | "AA" | "AP" | "DA" | "DP" | "CQ" | "CR" | "FP" | "NV"
+                | "AX" | "AR" | "DL" | "ZC" | "ZR" | "PC" | "ER"
+            ) {
                 return (first_two.to_string(), s[2..].to_string());
             }
         }
-        
+
         // Single character commands (for position updates, etc.)
         if !s.is_empty() {
             let first_char = &s[..1];
@@ -134,7 +144,7 @@ impl Packet {
                 return (first_char.to_string(), s[1..].to_string());
             }
         }
-        
+
         // Default: assume 2-character command
         if s.len() >= 2 {
             (s[..2].to_string(), s[2..].to_string())
@@ -158,20 +168,28 @@ impl Packet {
         // Handle different formats based on command type
         let mut result = if self.command == "DI" {
             // Server identification: command+destination:source
-            format!("{}{}{}:{}",prefix, self.command, self.destination, self.source)
-        } else if self.packet_type == PacketType::PilotUpdate || self.packet_type == PacketType::AtcUpdate {
+            format!(
+                "{}{}{}:{}",
+                prefix, self.command, self.destination, self.source
+            )
+        } else if self.packet_type == PacketType::PilotUpdate
+            || self.packet_type == PacketType::AtcUpdate
+        {
             // Position updates: command+destination:data (no separate source field)
-            format!("{}{}{}",prefix, self.command, self.destination)
+            format!("{}{}{}", prefix, self.command, self.destination)
         } else {
             // Default: command+source:destination
-            format!("{}{}{}:{}",prefix, self.command, self.source, self.destination)
+            format!(
+                "{}{}{}:{}",
+                prefix, self.command, self.source, self.destination
+            )
         };
-        
+
         if !self.data.is_empty() {
             result.push(':');
             result.push_str(&self.data.join(":"));
         }
-        
+
         result.push_str("\r\n");
         result
     }
@@ -191,7 +209,7 @@ mod tests {
     fn test_parse_server_identification() {
         let raw = "$DISERVER:CLIENT:VATSIM FSD V3.13:ABCD1234567890ABCD1234\r\n";
         let packet = Packet::parse(raw).unwrap();
-        
+
         assert_eq!(packet.packet_type, PacketType::Request);
         assert_eq!(packet.command, "DI");
         assert_eq!(packet.destination, "SERVER");
@@ -204,7 +222,7 @@ mod tests {
     fn test_parse_client_identification() {
         let raw = "$IDUAX123:SERVER:69d7:EuroScope 3.2:3:2:1234567:987654321\r\n";
         let packet = Packet::parse(raw).unwrap();
-        
+
         assert_eq!(packet.command, "ID");
         assert_eq!(packet.source, "UAX123");
         assert_eq!(packet.data[0], "69d7");
@@ -214,7 +232,7 @@ mod tests {
     fn test_parse_text_message() {
         let raw = "#TMUAX123:BAW456:Hello there\r\n";
         let packet = Packet::parse(raw).unwrap();
-        
+
         assert_eq!(packet.packet_type, PacketType::Client);
         assert_eq!(packet.command, "TM");
         assert_eq!(packet.source, "UAX123");
@@ -226,7 +244,7 @@ mod tests {
     fn test_parse_position_update() {
         let raw = "@NUAX123:1200:1:45.5:-73.5:35000:450:123456789:50\r\n";
         let packet = Packet::parse(raw).unwrap();
-        
+
         assert_eq!(packet.packet_type, PacketType::PilotUpdate);
         assert_eq!(packet.command, "N");
         assert_eq!(packet.destination, "UAX123");
@@ -241,7 +259,7 @@ mod tests {
             source: "CLIENT".to_string(),
             data: vec!["VATSIM FSD V3.13".to_string(), "TOKEN123".to_string()],
         };
-        
+
         let formatted = packet.format();
         assert!(formatted.starts_with("$DISERVER:CLIENT:"));
         assert!(formatted.ends_with("\r\n"));

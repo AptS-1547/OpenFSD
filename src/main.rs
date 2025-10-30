@@ -1,7 +1,7 @@
-mod packet;
 mod client;
-mod server;
 mod config;
+mod packet;
+mod server;
 
 use server::Server;
 use std::path::Path;
@@ -18,8 +18,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Initialize logger
     env_logger::Builder::from_env(
-        env_logger::Env::default().default_filter_or(&config.logging.level)
-    ).init();
+        env_logger::Env::default().default_filter_or(&config.logging.level),
+    )
+    .init();
 
     log::info!("Starting OpenFSD Server...");
 

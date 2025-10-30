@@ -1,9 +1,8 @@
 /// Simple FSD client example
-/// 
+///
 /// This example demonstrates how to connect to an FSD server and send basic packets.
-/// 
+///
 /// Usage: cargo run --example simple_client
-
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 
@@ -22,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Connect to the FSD server
     let server_addr = "127.0.0.1:6809";
     println!("Connecting to {}...", server_addr);
-    
+
     let stream = TcpStream::connect(server_addr).await?;
     println!("Connected!\n");
 
@@ -52,7 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Send client identification
     let id_packet = format!(
-        "$ID{}:SERVER:{}:Example Client:3:2:{}:{}\r\n", 
+        "$ID{}:SERVER:{}:Example Client:3:2:{}:{}\r\n",
         EXAMPLE_CALLSIGN, EXAMPLE_CLIENT_ID, EXAMPLE_CID, EXAMPLE_UID
     );
     println!("> {}", id_packet.trim_end());
@@ -64,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Send pilot login
     let login_packet = format!(
-        "#AP{}:SERVER:{}:{}:1:1:2:John Doe KJFK\r\n", 
+        "#AP{}:SERVER:{}:{}:1:1:2:John Doe KJFK\r\n",
         EXAMPLE_CALLSIGN, EXAMPLE_CID, EXAMPLE_PASSWORD
     );
     println!("> {}", login_packet.trim_end());
@@ -75,7 +74,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
     // Send a position update
-    let pos_packet = format!("@N{}:1200:1:40.6413:-73.7781:5000:250:414141414:30\r\n", EXAMPLE_CALLSIGN);
+    let pos_packet = format!(
+        "@N{}:1200:1:40.6413:-73.7781:5000:250:414141414:30\r\n",
+        EXAMPLE_CALLSIGN
+    );
     println!("> {}", pos_packet.trim_end());
     writer.write_all(pos_packet.as_bytes()).await?;
     writer.flush().await?;
@@ -84,7 +86,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
     // Send a text message
-    let msg_packet = format!("#TM{}:*:Hello from the example client!\r\n", EXAMPLE_CALLSIGN);
+    let msg_packet = format!(
+        "#TM{}:*:Hello from the example client!\r\n",
+        EXAMPLE_CALLSIGN
+    );
     println!("> {}", msg_packet.trim_end());
     writer.write_all(msg_packet.as_bytes()).await?;
     writer.flush().await?;
@@ -100,7 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\nClosing connection...");
     drop(writer);
-    
+
     // Wait for reader to finish
     let _ = tokio::time::timeout(tokio::time::Duration::from_secs(2), read_handle).await;
 
